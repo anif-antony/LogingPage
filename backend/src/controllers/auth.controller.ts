@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/user.model';
 import { hashPassword, comparePassword } from '../utils/hash';
 import { generateToken } from '../utils/jwt';
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
     const hashedPassword = await hashPassword(password);
@@ -11,37 +11,45 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating user', error });
+    (error as any).statusCode = 500;
+    (error as any).message = 'Error creating user';
+    next(error);
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
+      const error: any = new Error('Invalid credentials');
+      error.statusCode = 401;
+      return next(error);
     }
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
+      const error: any = new Error('Invalid credentials');
+      error.statusCode = 401;
+      return next(error);
     }
     const token = generateToken(user.id);
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error });
+    (error as any).statusCode = 500;
+    (error as any).message = 'Error logging in';
+    next(error);
   }
 };
 
-export const getMe = async (req: Request, res: Response): Promise<void> => {
+export const getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // The user object is attached to the request in the protect middleware
     const user = await User.findById((req as any).user.id).select('-password');
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user', error });
+    (error as any).statusCode = 500;
+    (error as any).message = 'Error fetching user';
+    next(error);
   }
 };
 
@@ -50,12 +58,14 @@ import crypto from 'crypto';
 
 // @desc    Forgot password
 // @route   POST /api/auth/forgotpassword
-export const forgotPassword = async (req: Request, res: Response) => {
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'There is no user with that email' });
+      const error: any = new Error('There is no user with that email');
+      error.statusCode = 404;
+      return next(error);
     }
 
     // Get reset token
@@ -79,10 +89,14 @@ export const forgotPassword = async (req: Request, res: Response) => {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
-      return res.status(500).json({ message: 'Email could not be sent' });
+      const error: any = new Error('Email could not be sent');
+      error.statusCode = 500;
+      return next(error);
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    (error as any).statusCode = 500;
+    (error as any).message = 'Server error';
+    next(error);
   }
 };
 

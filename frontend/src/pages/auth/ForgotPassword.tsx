@@ -30,7 +30,8 @@ const ForgotPasswordPage = () => {
       toast.success('If an account with that email exists, a password reset link has been sent.');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'An error occurred.');
+      const message = error.response?.data?.message || 'Failed to send reset link.';
+      toast.error(message);
     }
   };
 

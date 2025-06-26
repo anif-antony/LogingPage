@@ -44,10 +44,11 @@ const ResetPasswordPage = () => {
     }
     try {
       await resetPassword(values.password, resettoken);
-      toast.success('Password has been reset successfully! You can now log in.');
+      toast.success('Password reset successfully! You can now log in.');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to reset password.');
+      const message = error.response?.data?.message || 'Failed to reset password.';
+      toast.error(message);
     }
   };
 

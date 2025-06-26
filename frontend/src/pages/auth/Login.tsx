@@ -6,7 +6,6 @@ import { toast } from 'react-hot-toast';
 import { loginUser, registerUser } from '../../service/auth';
 import blackhole from '../../assets/blackhole.webm';
 import overlay from '../../assets/stargalaxy.mp4';
-import { AxiosError } from 'axios';
 
 type View = 'login' | 'signup';
 
@@ -70,27 +69,23 @@ const LoginPage = () => {
   const handleLoginSubmit = async (values: Record<string, string>) => {
     try {
       const response = await loginUser(values);
-      console.log('Login success:', response.data);
-      toast.success('Login successful!');
+      toast.success('Logged in successfully!');
       localStorage.setItem('token', response.data.token);
       navigate('/home');
-    } catch (error) {
-      console.error('Login error:', error);
-      const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data?.message || 'Login failed. Please try again.');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      toast.error(message);
     }
   };
 
   const handleSignupSubmit = async (values: Record<string, string>) => {
     try {
-      const response = await registerUser(values);
-      console.log('Signup success:', response.data);
+      await registerUser(values);
       toast.success('Registration successful! Please log in.');
-      setView('login'); // Switch to login view
-    } catch (error) {
-      console.error('Signup error:', error);
-      const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data?.message || 'Registration failed. Please try again.');
+      setView('login');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      toast.error(message);
     }
   };
 
